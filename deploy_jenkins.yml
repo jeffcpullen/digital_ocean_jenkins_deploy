@@ -1,0 +1,83 @@
+- hosts: jenkins
+  remote_user: root
+  tasks:
+  - name: Update to the latest packages
+    yum:
+      name: '*'
+      state: latest
+
+  - name: Add Apache
+    yum:
+      name: httpd
+      state: latest
+
+  - name: Add Jenkins repository
+    get_url:
+      url: http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+      dest: /etc/yum.repos.d/jenkins.repo
+      mode: 0644
+
+  - name: Add Jenkins repo key  
+    rpm_key:
+      state: present 
+      key: https://jenkins-ci.org/redhat/jenkins-ci.org.key
+
+  - name: Fix SELinux context on repo file
+    file:
+      path: /etc/yum.repos.d/jenkins.repo
+      seuser: unconfined_u
+      serole: object_r 
+      setype: system_conf_t
+      selevel: s0
+
+#  Only available in Ansible 2.1
+#  - name: Add Jenkins repository
+#    yumrepo:
+#      name: jenkins_repo
+#      description: Add Jenkins YUM repo
+#      file: jenkins.repo
+#      baseurl: http://pkg.jenkins-ci.org/redhat-stable/
+#      enabled: yes
+#      gpgcheck: no
+
+  - name: Install OpenJDK
+    yum:
+      name: java-1.7.0-openjdk
+      state: present
+
+  - name: Install Jenkins
+    yum:
+      name: jenkins
+      state: present
+
+#  - name: Configure firewalld port 8080/tcp
+#    firewalld:
+#      zone: public
+#      port: 8080/tcp
+#      permanent: true
+#      immediate:
+
+#  - name: Configure firwalld http service
+#    firewalld:
+#      zone: public
+#      service: http
+#      permanent: true
+#      immediate:
+
+  - name: Enable and start Apache
+    service:
+      name: httpd
+      enabled: yes
+      state: started
+
+# Need
+# Configure SSL Proxy
+
+  - name: Enable and start Jenkins
+    service:
+      name: jenkins
+      enabled: yes
+      state: started
+
+# Need
+# Google app auth (http://stackoverflow.com/questions/17676232/how-to-configure-jenkins-authentication-with-google-apps)
