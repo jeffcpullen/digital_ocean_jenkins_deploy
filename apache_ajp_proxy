@@ -1,0 +1,14 @@
+<VirtualHost *:80>
+    ServerAdmin your@email.address.com
+    DocumentRoot "/opt/apache/httpd/htdocs"
+    ServerName jenkins.yourdomain.com
+    ErrorLog "logs/jenkins-error_log"
+
+    ProxyPass / ajp://127.0.0.1:8009/
+    ProxyPassReverse / ajp://127.0.0.1:8009/
+    ProxyRequests Off
+    <Location />
+        Order allow,deny
+        Allow from all
+    </Location>
+</VirtualHost>
