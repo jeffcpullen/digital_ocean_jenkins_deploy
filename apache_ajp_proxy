@@ -1,5 +1,5 @@
 <VirtualHost *:80>
-    ServerAdmin your@email.address.com
+    ServerName {{ansible_nodename}}
     DocumentRoot "/opt/apache/httpd/htdocs"
     ServerName jenkins.yourdomain.com
     ErrorLog "logs/jenkins-error_log"

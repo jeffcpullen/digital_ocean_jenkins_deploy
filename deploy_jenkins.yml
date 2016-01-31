@@ -1,17 +1,44 @@
 - hosts: jenkins
   remote_user: root
   tasks:
+
+  - name: Add needed packages (including epel (may not be necessary))
+    yum:
+      pkg: "{{item}}"
+      state: latest
+    with_items:
+      - "httpd"
+      - "git"
+      - "mod_proxy_html"
+      - "bc"
+      - "epel-release"
+  
   - name: Update to the latest packages
     yum:
       name: '*'
       state: latest
 
-  - name: Add Apache and Git
-    yum: pkg={{item}} state=latest
+  - name: Modify the Apache file layout to use sites available/enabled
+    file:
+      path: "{{item}}"
+      state: directory
+      mode: 0755
     with_items:
-     - httpd
-     - git
-     - mod_proxy_html
+      - "/etc/httpd/sites-enabled"
+      - "/etc/httpd/sites-available"
+    notify:
+      - restart apache
+
+#  - name: Test for new IncludeOptional line
+#    shell: grep '^IncludeOptional sites-enabled/*.conf' /etc/httpd/conf/httpd.conf
+#    register: test_grep
+
+  - name: Add new IncludeOptional line
+    lineinfile:
+      dest: /etc/httpd/conf/httpd.conf
+      line: "IncludeOptional sites-enabled/*.conf"
+    notify:
+      - restart apache
 
   - name: Add Jenkins repository
     get_url:
@@ -116,12 +143,27 @@
   - name: Deploy jenkins proxy template
     template:
       src: apache_ajp_proxy
-      dest: /etc/httpd/conf.d/jenkins.conf
+      dest: /etc/httpd/sites-available/{{ansible_nodename}}.conf
       owner: root
       group: root
       mode: 0644
     notify:
       - restart apache
+
+  - name: Link apache config in sites-available to sites-enabled
+    file:
+      src: /etc/httpd/sites-available/{{ansible_nodename}}.conf
+      dest: /etc/httpd/sites-enabled/{{ansible_nodename}}.conf
+      owner: root
+      group: root
+      state: link
+    notify:
+      - restart apache
+  
+  - name: Clone Lets Encrypt repository
+    git: 
+      repo: https://github.com/letsencrypt/letsencrypt
+      dest: /opt/letsencrypt
 
 # Need
 # Google app auth (http://stackoverflow.com/questions/17676232/how-to-configure-jenkins-authentication-with-google-apps)
