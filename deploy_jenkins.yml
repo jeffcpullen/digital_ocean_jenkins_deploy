@@ -1,3 +1,4 @@
+---
 - hosts: jenkins
   remote_user: root
   tasks:
