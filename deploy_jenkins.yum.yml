@@ -8,21 +8,21 @@
 #  - name: Add python to allow normal Ansible management
 #    raw: dnf -y install python-simplejson
 
-  - name: Update to the latest packages
-    dnf:
-      name: '*'
-      state: latest
-
   - name: Add needed packages (including epel (may not be necessary))
-    dnf:
-      name: "{{item}}"
+    yum:
+      pkg: "{{item}}"
       state: latest
     with_items:
       - "httpd"
       - "git"
       - "mod_proxy_html"
       - "bc"
-      - "libselinux-python"
+      - "epel-release"
+  
+  - name: Update to the latest packages
+    yum:
+      name: '*'
+      state: latest
 
   - name: Modify the Apache file layout to use sites available/enabled
     file:
@@ -46,24 +46,24 @@
     notify:
       - restart apache
 
-#  - name: Add Jenkins repository
-#    get_url:
-#      url: http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
-#      dest: /etc/yum.repos.d/jenkins.repo
-#      mode: 0644
+  - name: Add Jenkins repository
+    get_url:
+      url: http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+      dest: /etc/yum.repos.d/jenkins.repo
+      mode: 0644
 
-#  - name: Add Jenkins repo key  
-#    rpm_key:
-#      state: present 
-#      key: https://jenkins-ci.org/redhat/jenkins-ci.org.key
+  - name: Add Jenkins repo key  
+    rpm_key:
+      state: present 
+      key: https://jenkins-ci.org/redhat/jenkins-ci.org.key
 
-#  - name: Fix SELinux context on repo file
-#    file:
-#      path: /etc/yum.repos.d/jenkins.repo
-#      seuser: unconfined_u
-#      serole: object_r 
-#      setype: system_conf_t
-#      selevel: s0
+  - name: Fix SELinux context on repo file
+    file:
+      path: /etc/yum.repos.d/jenkins.repo
+      seuser: unconfined_u
+      serole: object_r 
+      setype: system_conf_t
+      selevel: s0
 
 #  Only available in Ansible 2.1
 #  - name: Add Jenkins repository
@@ -75,13 +75,13 @@
 #      enabled: yes
 #      gpgcheck: no
 
-#  - name: Install OpenJDK
-#    yum:
-#     name: java-1.7.0-openjdk
-#      state: present
+  - name: Install OpenJDK
+    yum:
+      name: java-1.7.0-openjdk
+      state: present
 
   - name: Install Jenkins
-    dnf:
+    yum:
       name: jenkins
       state: present
 
@@ -107,13 +107,13 @@
     notify:
       - restart jenkins
 
-#  - name: Enable MD5 in Java security (work around for current bug)
-#    replace:
-#      dest=/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.95-2.6.4.0.el7_2.x86_64/jre/lib/security/java.security
-#      regexp='jdk.certpath.disabledAlgorithms=MD2, MD5, RSA keySize < 1024'
-#      replace='jdk.certpath.disabledAlgorithms=MD2, RSA keySize < 1024'
-#    notify:
-#      - restart jenkins
+  - name: Enable MD5 in Java security (work around for current bug)
+    replace:
+      dest=/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.95-2.6.4.0.el7_2.x86_64/jre/lib/security/java.security
+      regexp='jdk.certpath.disabledAlgorithms=MD2, MD5, RSA keySize < 1024'
+      replace='jdk.certpath.disabledAlgorithms=MD2, RSA keySize < 1024'
+    notify:
+      - restart jenkins
 
   - name: Limit AJP listener to localhost 
     replace:

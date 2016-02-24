@@ -10,14 +10,22 @@
     digital_ocean:
       state: present
       command: droplet
-      name: mydroplettest
-      api_token: "{{DO_API_KEY}}"
-      size_id: 512mb
-      region_id: nyc2
-      image_id: centos-7.1-x64
+      name: jenkins
+      api_token: "{{ DO_API_KEY }}"
+      size_id: "{{ SIZE | default('512mb') }}"
+      region_id: "{{ REGION_ID | default('nyc2') }}"
+      image_id: "{{ IMAGE | default(14238961) }}"
       wait_timeout: 500
+      unique_name: yes
+      ssh_key_ids: "{{ SSH_KEYS }}"
     register: my_droplet
   
   - debug: msg="ID is {{ my_droplet.droplet.id }}"
 
   - debug: msg="IP is {{ my_droplet.droplet.ip_address }}"
+
+  - name: Add jenkins host to the hosts file
+    lineinfile:
+      dest: "{{ inventory_file }}"
+      regexp: '^jenkins*' 
+      line: "jenkins ansible_user=root ansible_host={{ my_droplet.droplet.ip_address }}"
